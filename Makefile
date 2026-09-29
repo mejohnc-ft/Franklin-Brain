@@ -1,7 +1,9 @@
-.PHONY: help build install verify live start easy answer use-now check-in first-minute demo playbook value-audit completion-audit design-audit visual-review-plan freshness action-cards daily-brief refresh-memory meeting-records now what-now sources memory memory-promote recent-work status processes cleanup-plan support-bundle next value prove-value oracle-brief bubble-up work-block doctor audit ask ask-commit idea review review-status outcome snapshot snapshot-json snapshot-brief snapshot-brief-md snapshot-value snapshot-digest snapshot-oracle snapshot-today snapshot-blindspots snapshot-ideas snapshot-projects snapshot-deck snapshot-deck-md latest-pack agent-prompt start-here handoff snapshot-file mcp-check mcp-test
+.PHONY: iphone-import iphone-test help build install verify live start easy answer use-now check-in first-minute demo playbook value-audit completion-audit design-audit visual-review-plan freshness action-cards daily-brief refresh-memory meeting-records now what-now sources memory memory-promote recent-work status processes cleanup-plan support-bundle next value prove-value oracle-brief bubble-up work-block doctor audit ask ask-commit idea review review-status outcome snapshot snapshot-json snapshot-brief snapshot-brief-md snapshot-value snapshot-digest snapshot-oracle snapshot-today snapshot-blindspots snapshot-ideas snapshot-projects snapshot-deck snapshot-deck-md latest-pack agent-prompt start-here handoff snapshot-file mcp-check mcp-test
 
 help:
 	@echo "Terminal Brain commands:"
+	@echo "  make iphone-import DROP=/path/to/drop WORKSPACE=/path/to/vault  Import explicit iPhone captures"
+	@echo "  make iphone-test   Test the iPhone file-drop importer"
 	@echo "  make start         Same as make use-now; safest first command"
 	@echo "  make easy          Same as make start; no-choice path for first value"
 	@echo "  make answer        Ask the default Oracle question with closed-app fallback"
@@ -67,6 +69,12 @@ help:
 	@echo "  make snapshot-file OUTPUT=/tmp/terminal-brain-snapshot.md"
 	@echo "  make mcp-check     Check MCP server syntax"
 	@echo "  make mcp-test      Check MCP tool contract"
+
+iphone-import:
+	python3 scripts/iphone/import_drop.py --drop "$(DROP)" --workspace "$(if $(WORKSPACE),$(WORKSPACE),$(TERMINAL_BRAIN_WORKSPACE))"
+
+iphone-test:
+	python3 -m unittest discover -s scripts/iphone -p 'test_*.py'
 
 build:
 	./mac-app/scripts/build-app.zsh

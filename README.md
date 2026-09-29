@@ -80,7 +80,7 @@ export TERMINAL_BRAIN_WORKSPACE="$HOME/path/to/your/vault"
 make start       # one next move, plus the capture, ask, and outcome commands
 ```
 
-Open the app yourself from `~/Applications` when you want the UI. To register the MCP server with an agent:
+Open the app yourself from `~/Applications` when you want the UI. For opt-in iPhone capture through a synced file-drop (without exposing the unauthenticated local API), see [iPhone contributor guide](docs/iphone-contributor.md). To register the MCP server with an agent:
 
 ```json
 {
