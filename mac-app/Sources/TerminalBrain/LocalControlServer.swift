@@ -9,7 +9,10 @@ final class LocalControlServer {
     func start() {
         guard listener == nil else { return }
         do {
-            let listener = try NWListener(using: .tcp, on: port)
+            let parameters = NWParameters.tcp
+            // Existing routes have no authentication; never expose them to the LAN.
+            parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: port)
+            let listener = try NWListener(using: parameters, on: port)
             listener.newConnectionHandler = { [weak self] connection in
                 self?.handle(connection)
             }
@@ -31,6 +34,10 @@ final class LocalControlServer {
             var next = buffer
             if let data {
                 next.append(data)
+            }
+            if next.count > 20_480 {
+                self.send(.json(413, ["error": "Request too large"]), on: connection)
+                return
             }
             if let request = HTTPRequest.parse(next) {
                 Task {
@@ -352,6 +359,8 @@ final class LocalControlServer {
                 project: request.jsonBody?["project"] as? String ?? "",
                 tags: Array(Set(tags)).sorted()
             ))
+        case ("POST", "/iphone/intake"):
+            return IPhoneIntake.accept(request)
         case ("POST", "/sync"):
             let includeNotes = request.jsonBody?["includeAppleNotes"] as? Bool ?? false
             let result = await CommandRunner.run(
@@ -4215,6 +4224,7 @@ struct HTTPRequest {
     let method: String
     let path: String
     let body: Data
+    let headers: [String: String]
 
     var jsonBody: [String: Any]? {
         guard !body.isEmpty else { return nil }
@@ -4231,10 +4241,17 @@ struct HTTPRequest {
         guard parts.count >= 2 else { return nil }
 
         var contentLength = 0
+        var headers: [String: String] = [:]
         for line in lines.dropFirst() {
             let pair = line.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
-            if pair.count == 2 && pair[0].lowercased() == "content-length" {
-                contentLength = Int(pair[1]) ?? 0
+            if pair.count == 2 {
+                let key = pair[0].lowercased()
+                guard headers[key] == nil else { return nil }
+                headers[key] = pair[1]
+                if key == "content-length" {
+                    guard let length = Int(pair[1]), (0...16_384).contains(length) else { return nil }
+                    contentLength = length
+                }
             }
         }
 
@@ -4242,7 +4259,7 @@ struct HTTPRequest {
         guard data.count >= bodyStart + contentLength else { return nil }
         let body = Data(data[bodyStart..<(bodyStart + contentLength)])
         let path = parts[1].split(separator: "?", maxSplits: 1).first.map(String.init) ?? parts[1]
-        return HTTPRequest(method: parts[0], path: path, body: body)
+        return HTTPRequest(method: parts[0], path: path, body: body, headers: headers)
     }
 }
 

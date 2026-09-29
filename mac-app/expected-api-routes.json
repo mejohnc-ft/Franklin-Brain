@@ -64,6 +64,7 @@
   "POST /oracle/commit",
   "POST /outcomes/commit",
   "POST /ideas/capture",
+  "POST /iphone/intake",
   "POST /sync",
   "POST /start-work"
 ]
